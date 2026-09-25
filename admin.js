@@ -30,7 +30,7 @@ form.addEventListener("submit", async (e) => {
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    window.location.href = "dashboard.html";
+    window.location.href = "index.html";
   } catch (error) {
     console.error(error.code);
 
