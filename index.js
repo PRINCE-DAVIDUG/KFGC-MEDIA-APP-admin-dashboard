@@ -1,88 +1,124 @@
-// dashboard.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// ========================================
+// KFGC ADMIN DASHBOARD
+// Authentication and Navigation Controller
+// ========================================
 
-// ----- Firebase config -----
+import {
+initializeApp,
+getApps,
+getApp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+
+import {
+getAuth,
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCPWH5BCSFp3Qqs_-JVfqDkUCEfhyg4VX4",
-  authDomain: "kfgc-media-app.firebaseapp.com",
-  projectId: "kfgc-media-app",
-  storageBucket: "kfgc-media-app.firebasestorage.app",
-  messagingSenderId: "203397572574",
-  appId: "1:203397572574:web:db903da199482fd6cedf4f"
+apiKey: "AIzaSyCPWH5BCSFp3Qqs_-JVfqDkUCEfhyg4VX4",
+authDomain: "kfgc-media-app.firebaseapp.com",
+projectId: "kfgc-media-app",
+storageBucket: "kfgc-media-app.firebasestorage.app",
+messagingSenderId: "203397572574",
+appId: "1:203397572574:web:db903da199482fd6cedf4f"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Initialize Firebase safely
+const app = getApps().length
+? getApp()
+: initializeApp(firebaseConfig);
 
-// DOM elements
-const totalAmountEl = document.getElementById("totalAmount");
-const totalDonorsEl = document.getElementById("totalDonors");
-const lastDonationEl = document.getElementById("lastDonation");
-const donationsTable = document.getElementById("donationsTable");
+const auth = getAuth(app);
 
-// ----- Real-time listener -----
-const donationsCol = collection(db, "donations");
-const donationsQuery = query(donationsCol, orderBy("timestamp", "desc"));
+// Authorized administrator
+const ADMIN_UID = "PrMQL05Yuwe8qdR9qwxN41WO8oX2";
 
-onSnapshot(donationsQuery, snapshot => {
-  let totalAmount = 0;
-  const donorsSet = new Set();
-  donationsTable.innerHTML = "";
+// Login page
+const LOGIN_PAGE = "admin.html";
 
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    totalAmount += data.amount || 0;
-    if (data.name) donorsSet.add(data.name);
+// ========================================
+// AUTHENTICATION GUARD
+// ========================================
 
-    const tr = document.createElement("tr");
-    const date = data.timestamp?.toDate?.()?.toLocaleString() || "—";
-    tr.innerHTML = `
-      <td>${data.name || "Anonymous"}</td>
-      <td>${data.email || "—"}</td>
-      <td>UGX ${Number(data.amount).toLocaleString()}</td>
-      <td>${data.donationType || "—"}</td>
-      <td>${date}</td>
-    `;
-    donationsTable.appendChild(tr);
-  });
+onAuthStateChanged(auth, async (user) => {
 
-  // Update stats
-  totalAmountEl.textContent = `UGX ${totalAmount.toLocaleString()}`;
-  totalDonorsEl.textContent = donorsSet.size;
-
-  // Last donation
-  const lastDonationDoc = snapshot.docs[0];
-  if (lastDonationDoc) {
-    const last = lastDonationDoc.data();
-    lastDonationEl.textContent = `${last.name || "Anonymous"} — UGX ${Number(last.amount).toLocaleString()}`;
-  } else {
-    lastDonationEl.textContent = "—";
-  }
-});
-
-// Optional: Logout function
-function logout() {
-  alert("Logout clicked! Implement auth logout here.");
+if (!user) {
+window.location.replace(LOGIN_PAGE);
+return;
 }
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const auth = getAuth();
-onAuthStateChanged(auth, user => {
-  if (!user) {
-    // Not logged in → redirect
-    window.location.href = "donate.html";
-  }
+if (user.uid !== ADMIN_UID) {
+
+await signOut(auth);
+
+window.location.replace(LOGIN_PAGE);
+return;
+
+}
+
+// Show dashboard only after verification
+document.body.classList.add("admin-authorized");
+
+console.log("KFGC administrator verified.");
 });
 
+// ========================================
+// MOBILE NAVIGATION
+// ========================================
 
-  document.getElementById("logoutBtn").addEventListener("click", function () {
+const menuToggle = document.getElementById("menu-toggle");
+const primaryNav = document.getElementById("primary-nav");
 
-    // Optional: clear login/session data
-    localStorage.clear();
-    sessionStorage.clear();
+if (menuToggle && primaryNav) {
 
-    // Redirect to donation page
-    window.location.href = "donate.html";
-  });
+menuToggle.addEventListener("click", () => {
+
+const expanded =
+  menuToggle.getAttribute("aria-expanded") === "true";
+
+menuToggle.setAttribute(
+  "aria-expanded",
+  String(!expanded)
+);
+
+primaryNav.classList.toggle("open");
+
+});
+
+}
+
+// ========================================
+// SECURE LOGOUT
+// ========================================
+
+const logoutBtn = document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+
+logoutBtn.addEventListener("click", async () => {
+
+logoutBtn.disabled = true;
+logoutBtn.textContent = "Logging out...";
+
+try {
+
+  await signOut(auth);
+
+  window.location.replace(LOGIN_PAGE);
+
+} catch (error) {
+
+  console.error("Logout error:", error);
+
+  alert("Logout failed. Please try again.");
+
+  logoutBtn.disabled = false;
+  logoutBtn.textContent = "Logout";
+
+}
+
+});
+
+                            }
