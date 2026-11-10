@@ -72,7 +72,7 @@ const auth = getAuth();
 onAuthStateChanged(auth, user => {
   if (!user) {
     // Not logged in → redirect
-    window.location.href = "admin.html";
+    window.location.href = "donate.html";
   }
 });
 
@@ -84,5 +84,5 @@ onAuthStateChanged(auth, user => {
     sessionStorage.clear();
 
     // Redirect to donation page
-    window.location.href = "admin.html";
+    window.location.href = "donate.html";
   });
