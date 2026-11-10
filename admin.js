@@ -23,8 +23,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // Authorized administrator
-const ADMIN_UID = "PrMQL05Yuwe8qdR9qwxN41WOoX2";
-
+const ADMIN_UID = "PrMQL05Yuwe8qdR9qwxN41WO8oX2";
 // Login elements
 const form = document.getElementById("adminLoginForm");
 const errorBox = document.getElementById("loginError");
