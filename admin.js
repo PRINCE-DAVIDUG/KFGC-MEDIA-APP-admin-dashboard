@@ -1,10 +1,14 @@
-// admin.js (WORKING VERSION)
+// KFGC ADMIN LOGIN — SECURED VERSION
 
-// Firebase CDN imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// ✅ YOUR REAL CONFIG (correct)
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCPWH5BCSFp3Qqs_-JVfqDkUCEfhyg4VX4",
   authDomain: "kfgc-media-app.firebaseapp.com",
@@ -18,29 +22,54 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Form
+// Authorized administrator
+const ADMIN_UID = "PrMQL05Yuwe8qdR9qwxN41WOoX2";
+
+// Login elements
 const form = document.getElementById("adminLoginForm");
 const errorBox = document.getElementById("loginError");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
+  errorBox.textContent = "";
+
   const email = document.getElementById("adminEmail").value.trim();
-  const password = document.getElementById("adminPassword").value.trim();
+  const password = document.getElementById("adminPassword").value;
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
-    window.location.href = "index.html";
-  } catch (error) {
-    console.error(error.code);
+    const result = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-    // Friendly errors
-    if (error.code === "auth/user-not-found") {
-      errorBox.textContent = "Admin account not found.";
-    } else if (error.code === "auth/wrong-password") {
-      errorBox.textContent = "Wrong password.";
+    // Verify administrator UID
+    if (result.user.uid !== ADMIN_UID) {
+      await signOut(auth);
+
+      errorBox.textContent =
+        "Access denied. You are not an authorized administrator.";
+
+      return;
+    }
+
+    // Authorized administrator
+    window.location.href = "index.html";
+
+  } catch (error) {
+    console.error("Admin login error:", error.code);
+
+    if (error.code === "auth/invalid-credential") {
+      errorBox.textContent = "Incorrect email or password.";
+
+    } else if (error.code === "auth/too-many-requests") {
+      errorBox.textContent =
+        "Too many attempts. Please try again later.";
+
     } else {
-      errorBox.textContent = "Login failed. Check details.";
+      errorBox.textContent =
+        "Login failed. Please check your details.";
     }
   }
 });
