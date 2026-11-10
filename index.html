@@ -17,12 +17,16 @@
   box-sizing: border-box;  
 }  
   
-body {  
-  margin: 0;  
-  font-family: Arial, sans-serif;  
-  padding-top: 60px;  
-}  
-  
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  padding-top: 60px;
+  visibility: hidden;
+}
+
+body.admin-authorized {
+  visibility: visible;
+ }
 /* ===== HEADER ===== */  
 .dash-header {  
   background-color: #0A1A44;  
@@ -245,8 +249,10 @@ body {
       <li><a href="donate-dashboard.html"><i class="fa-solid fa-coins"></i> Donations</a></li>  
       <li><a href="prayer.html"><i class="fa-solid fa-hands-praying"></i> Prayers</a></li>  
     </ul>  
-  </nav>  <button type="button" class="logout-btn" onclick="logout()">Logout</button>
-
+  </nav> 
+   <button type="button" class="logout-btn" id="logoutBtn">
+  Logout
+   </button>
 </header>  
   <main class="hero-section">
   <div class="hero-overlay">
@@ -289,18 +295,54 @@ body {
       </div>  
     </div>  
   </footer>  
-<script>  
-const menuToggle = document.getElementById("menu-toggle");  
-const primaryNav = document.getElementById("primary-nav");  menuToggle.addEventListener("click", () => {
-const expanded = menuToggle.getAttribute("aria-expanded") === "true";
-menuToggle.setAttribute("aria-expanded", !expanded);
-primaryNav.classList.toggle("open");
+<script type="module">
+import { auth } from "./firebase.js";
+
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const ADMIN_UID = "PrMQL05Yuwe8qdR9qwxN41WOoX2";
+
+const LOGIN_PAGE = "admin.html";
+
+// Mobile navigation
+const menuToggle = document.getElementById("menu-toggle");
+const primaryNav = document.getElementById("primary-nav");
+
+menuToggle.addEventListener("click", () => {
+  const expanded =
+    menuToggle.getAttribute("aria-expanded") === "true";
+
+  menuToggle.setAttribute("aria-expanded", String(!expanded));
+  primaryNav.classList.toggle("open");
 });
 
-function logout() {
-// redirect or clear session here
-window.location.href = "admin.html";
-}
+// Verify administrator
+onAuthStateChanged(auth, async (user) => {
+  if (!user || user.uid !== ADMIN_UID) {
+    if (user) {
+      await signOut(auth);
+    }
+
+    window.location.replace(LOGIN_PAGE);
+    return;
+  }
+
+  document.body.classList.add("admin-authorized");
+});
+
+// Genuine Firebase logout
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    window.location.replace(LOGIN_PAGE);
+  } catch (error) {
+    console.error("Logout failed:", error);
+    alert("Unable to log out. Please try again.");
+  }
+});
 </script>
 <script>
 if ("serviceWorker" in navigator) {
